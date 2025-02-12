@@ -90,7 +90,6 @@ class MainActivity : ComponentActivity() {
                             APIButton("CMS", "http://10.0.2.2:8081/carts")
                         }
 
-                        // Add some space between the rows
                         Spacer(modifier = Modifier.weight(1f))
 
                         // LaunchAssistantButton in the center
@@ -121,7 +120,7 @@ class MainActivity : ComponentActivity() {
         val client = HttpClient(Android)
         val response: HttpResponse = client.get(url)
         if (response.status.value in 200..299) {
-            text.value = response.bodyAsText() // Display the response
+            text.value = response.bodyAsText()
         } else {
             text.value = "Error while calling API"
         }
