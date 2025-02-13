@@ -26,6 +26,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -44,7 +45,9 @@ import org.osmdroid.library.BuildConfig
 class MainActivity : ComponentActivity() {
 
     // List of items you want to display when prompted as a test
-    private val itemList = listOf("Item 1", "Item 2", "Item 3", "Item 4", "Item 5")
+    private val itemList = mutableStateListOf("Item 1", "Item 2", "Item 3", "Item 4", "Item 5")
+    private var showList = mutableStateOf(false)
+
 
     private val text = mutableStateOf("")
 
@@ -71,7 +74,7 @@ class MainActivity : ComponentActivity() {
                         verticalArrangement = Arrangement.Top,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // First Row for API buttons
+                        // API Buttons
                         Row(
                             modifier = Modifier
                                 .padding(innerPadding)
@@ -87,9 +90,13 @@ class MainActivity : ComponentActivity() {
 
                         LaunchAssistantButton()
 
-                        // Text displaying the response
+                        // Display the list here
+                        ItemListDisplay()
+
+                        // Text displaying API responses
                         Text(text.value)
                     }
+
                 }
             }
         }
@@ -144,7 +151,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // LaunchAssistantButton that will trigger Google Assistant
     @Composable
     fun LaunchAssistantButton() {
         Button(
@@ -170,19 +176,44 @@ class MainActivity : ComponentActivity() {
         startActivityForResult(intent, 100)
     }
 
-
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
         if (requestCode == 100 && resultCode == RESULT_OK) {
             val recognizedSpeech = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-            recognizedSpeech?.let {
-                if (it.contains("show the list")) {
-                    
-                    text.value = itemList.joinToString("\n")
+            recognizedSpeech?.let { results ->
+                for (result in results) {
+                    when {
+                        result.equals("show the list", ignoreCase = true) -> {
+                            showList.value = true
+                        }
+                        result.startsWith("add ", ignoreCase = true) && result.contains(" to the list", ignoreCase = true) -> {
+                            val itemToAdd = result
+                                .removePrefix("add ")
+                                .removeSuffix(" to the list")
+                                .trim()
+
+                            if (itemToAdd.isNotEmpty()) {
+                                itemList.add(itemToAdd)
+                                showList.value = true
+                            }
+                        }
+                    }
                 }
             }
         }
     }
+
+    @Composable
+    fun ItemListDisplay() {
+        if (showList.value) {
+            Column {
+                itemList.forEach { item ->
+                    Text(text = item)
+                }
+            }
+        }
+    }
+
 
 }
